@@ -29,3 +29,11 @@ fn main() {
     let expr = mul(int(10),add(int(1), int(5)));
     println!("l = {:?} evals to {}", expr, eval(&*expr))
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
+}
