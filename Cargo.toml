@@ -9,4 +9,4 @@ edition = "2021"
 
 [[bin]]
 name = "compiler-learning"
-path = "main.rs"
+path = "src/main.rs"
