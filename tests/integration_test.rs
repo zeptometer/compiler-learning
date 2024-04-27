@@ -1,5 +1,5 @@
-use compiler_learning::ast::{int, add, mul};
-use compiler_learning::eval::eval;
+use compiler_learning::arith::ast::{int, add, mul};
+use compiler_learning::arith::eval::eval;
 
 #[test]
 fn eval_random_things() {

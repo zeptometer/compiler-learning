@@ -1,8 +1,7 @@
-mod ast;
-mod eval;
+mod arith;
 
-use crate::ast::{int, add, mul};
-use crate::eval::eval;
+use crate::arith::ast::{int, add, mul};
+use crate::arith::eval::eval;
 
 fn main() {
     let expr = mul(int(10),add(int(1), int(5)));

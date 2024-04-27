@@ -1,4 +1,4 @@
-use crate::ast::Ast;
+use crate::arith::ast::Ast;
 
 pub fn eval(e: &Ast) -> i32 {
     match e {
@@ -11,7 +11,7 @@ pub fn eval(e: &Ast) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{int, add, mul};
+    use crate::arith::ast::{int, add, mul};
 
     #[test]
     fn eval_literal() {
