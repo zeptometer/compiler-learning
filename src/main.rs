@@ -1,6 +1,8 @@
 mod arith;
 mod stlc;
 
+use std::rc::Rc;
+
 fn main() {
     {
         use crate::arith::ast::{int, add, mul};
@@ -12,9 +14,10 @@ fn main() {
 
     {
         use crate::stlc::ast::{int, var, lam, app};
+        use crate::stlc::env::empty;
+        use crate::stlc::eval::eval;
 
-        let expr = app(lam(var(0)), int(20));
-        println!("l = {:?}", expr)
+        let expr = app(&lam(&var(0)), &int(20));
+        println!("l = {:?}  evals to {:?}", Rc::clone(&expr), eval(expr, empty(), Box::new(|v| v)))
     }
-
 }

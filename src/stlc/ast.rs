@@ -1,32 +1,28 @@
+use std::rc::Rc;
+
 #[derive(Eq, PartialEq, Debug)]
 pub enum Ast {
     Int(i32),
-    Var(i32),
-    Lam(Box<Ast>),
-    App(Box<Ast>, Box<Ast>)
+    Var(usize),
+    Lam(Rc<Ast>),
+    App(Rc<Ast>, Rc<Ast>)
 }
-
-pub enum Val {
-    Clos(Env, Ast)
-}
-
-pub type Env = Vec<Val>;
 
 // Constructors
-pub fn int(i: i32) -> Box<Ast> {
-    Box::new(Ast::Int(i))
+pub fn int(i: i32) -> Rc<Ast> {
+    Rc::new(Ast::Int(i))
 }
 
-pub fn var(i: i32) -> Box<Ast> {
-    Box::new(Ast::Var(i))
+pub fn var(i: usize) -> Rc<Ast> {
+    Rc::new(Ast::Var(i))
 }
 
-pub fn lam(a: Box<Ast>) -> Box<Ast> {
-    Box::new(Ast::Lam(a))
+pub fn lam(a: &Rc<Ast>) -> Rc<Ast> {
+    Rc::new(Ast::Lam(Rc::clone(&a)))
 }
 
-pub fn app(a1: Box<Ast>, a2: Box<Ast>) -> Box<Ast> {
-    Box::new(Ast::App(a1, a2))
+pub fn app(a1: &Rc<Ast>, a2: &Rc<Ast>) -> Rc<Ast> {
+    Rc::new(Ast::App(Rc::clone(a1), Rc::clone(a2)))
 }
 
 #[cfg(test)]
@@ -46,11 +42,11 @@ mod tests {
 
     #[test]
     fn make_lam() {
-        assert_eq!(*lam(var(1)), Ast::Lam(var(1)));
+        assert_eq!(*lam(&var(1)), Ast::Lam(var(1)));
     }
 
     #[test]
     fn make_app() {
-        assert_eq!(*app(lam(var(0)), var(2)), Ast::App(lam(var(0)), var(2)));
+        assert_eq!(*app(&lam(&var(0)), &var(2)), Ast::App(lam(&var(0)), var(2)));
     }
 }
