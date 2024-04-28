@@ -1,8 +1,8 @@
-use crate::stlc::ast::*;
-use crate::stlc::env;
-use crate::stlc::env::Env;
-use crate::stlc::val;
-use crate::stlc::val::Val;
+use crate::stlc::eval_defunct1::ast::*;
+use crate::stlc::eval_defunct1::env;
+use crate::stlc::eval_defunct1::env::Env;
+use crate::stlc::eval_defunct1::val;
+use crate::stlc::eval_defunct1::val::Val;
 use std::rc::Rc;
 
 pub enum Cont {
@@ -42,9 +42,9 @@ pub fn eval(ast: Rc<Ast>, env: Rc<Env<Val>>, cont: Cont) -> Rc<Val> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stlc::ast;
-    use crate::stlc::env::{cons, empty, Env};
-    use crate::stlc::val;
+    use crate::stlc::eval_defunct1::ast;
+    use crate::stlc::eval_defunct1::env::{cons, empty, Env};
+    use crate::stlc::eval_defunct1::val;
 
     #[test]
     fn eval_literal() {

@@ -11,10 +11,10 @@ fn eval_random_things() {
 #[test]
 fn eval_defunct1() {
     use std::rc::Rc;
-    use compiler_learning::stlc::ast;
-    use compiler_learning::stlc::val;
-    use compiler_learning::stlc::env;
-    use compiler_learning::stlc::eval_defunct1::{eval, Cont};
+    use compiler_learning::stlc::eval_defunct1::ast;
+    use compiler_learning::stlc::eval_defunct1::val;
+    use compiler_learning::stlc::eval_defunct1::env;
+    use compiler_learning::stlc::eval_defunct1::eval::{eval, Cont};
 
     fn env1() -> Rc<env::Env<val::Val>> {
         env::cons(val::int(10), env::cons(val::int(20), env::empty()))

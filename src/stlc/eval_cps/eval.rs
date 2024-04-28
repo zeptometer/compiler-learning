@@ -1,8 +1,8 @@
-use crate::stlc::ast::Ast;
-use crate::stlc::env;
-use crate::stlc::env::Env;
-use crate::stlc::val;
-use crate::stlc::val::Val;
+use crate::stlc::eval_cps::ast::Ast;
+use crate::stlc::eval_cps::env;
+use crate::stlc::eval_cps::env::Env;
+use crate::stlc::eval_cps::val;
+use crate::stlc::eval_cps::val::Val;
 use std::rc::Rc;
 
 pub fn eval(ast: Rc<Ast>, env: Rc<Env<Val>>, cont: Box<dyn FnOnce(Rc<Val>) -> Rc<Val>>) -> Rc<Val> {
@@ -38,9 +38,9 @@ pub fn eval(ast: Rc<Ast>, env: Rc<Env<Val>>, cont: Box<dyn FnOnce(Rc<Val>) -> Rc
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stlc::ast;
-    use crate::stlc::env::{cons, empty, Env};
-    use crate::stlc::val;
+    use crate::stlc::eval_cps::ast;
+    use crate::stlc::eval_cps::env::{cons, empty, Env};
+    use crate::stlc::eval_cps::val;
 
     #[test]
     fn eval_literal() {

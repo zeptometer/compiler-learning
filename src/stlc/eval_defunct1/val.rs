@@ -1,6 +1,6 @@
 use std::rc::Rc;
-use crate::stlc::ast::Ast;
-use crate::stlc::env::Env;
+use crate::stlc::eval_defunct1::ast::Ast;
+use crate::stlc::eval_defunct1::env::Env;
 
 #[derive(Eq, PartialEq, Debug)]
 

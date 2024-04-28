@@ -13,9 +13,9 @@ fn main() {
     }
 
     {
-        use crate::stlc::ast::{int, var, lam, app};
-        use crate::stlc::env::empty;
-        use crate::stlc::eval::eval;
+        use crate::stlc::eval_cps::ast::{int, var, lam, app};
+        use crate::stlc::eval_cps::env::empty;
+        use crate::stlc::eval_cps::eval::eval;
 
         let expr = app(lam(var(0)), int(20));
         println!("l = {:?}  evals to {:?}", Rc::clone(&expr), eval(expr, empty(), Box::new(|v| v)))
