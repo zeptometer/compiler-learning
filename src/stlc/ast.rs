@@ -17,12 +17,12 @@ pub fn var(i: usize) -> Rc<Ast> {
     Rc::new(Ast::Var(i))
 }
 
-pub fn lam(a: &Rc<Ast>) -> Rc<Ast> {
+pub fn lam(a: Rc<Ast>) -> Rc<Ast> {
     Rc::new(Ast::Lam(Rc::clone(&a)))
 }
 
-pub fn app(a1: &Rc<Ast>, a2: &Rc<Ast>) -> Rc<Ast> {
-    Rc::new(Ast::App(Rc::clone(a1), Rc::clone(a2)))
+pub fn app(a1: Rc<Ast>, a2: Rc<Ast>) -> Rc<Ast> {
+    Rc::new(Ast::App(Rc::clone(&a1), Rc::clone(&a2)))
 }
 
 #[cfg(test)]
@@ -42,11 +42,11 @@ mod tests {
 
     #[test]
     fn make_lam() {
-        assert_eq!(*lam(&var(1)), Ast::Lam(var(1)));
+        assert_eq!(*lam(var(1)), Ast::Lam(var(1)));
     }
 
     #[test]
     fn make_app() {
-        assert_eq!(*app(&lam(&var(0)), &var(2)), Ast::App(lam(&var(0)), var(2)));
+        assert_eq!(*app(lam(var(0)), var(2)), Ast::App(lam(var(0)), var(2)));
     }
 }

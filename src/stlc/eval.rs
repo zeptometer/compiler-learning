@@ -32,3 +32,32 @@ pub fn eval(ast: Rc<Ast>, env: Rc<Env<Val>>, cont: Box<dyn FnOnce(Rc<Val>) -> Rc
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::stlc::ast;
+    use crate::stlc::env::{cons, empty, Env};
+    use crate::stlc::val;
+
+    #[test]
+    fn eval_literal() {
+        fn env1() -> Rc<Env<val::Val>> {
+            cons(val::int(10), cons(val::int(20), empty()))
+        }
+        assert_eq!(eval(ast::int(1), env1(), Box::new(|v| v)), val::int(1));
+        assert_eq!(eval(ast::var(0), env1(), Box::new(|v| v)), val::int(10));
+        assert_eq!(eval(ast::var(1), env1(), Box::new(|v| v)), val::int(20));
+        assert_eq!(
+            eval(
+                ast::app(
+                    ast::app(ast::lam(ast::lam(ast::var(1))), ast::int(33)),
+                    ast::int(44)
+                ),
+                env1(),
+                Box::new(|v| v)
+            ),
+            val::int(33)
+        )
+    }
+}
