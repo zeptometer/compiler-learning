@@ -15,11 +15,9 @@ fn apply_cont(cont: Cont, v: Rc<Val>) -> Rc<Val> {
     match cont {
         Cont::Cont0 => v,
         Cont::EvalArg(arg, env, cont) => match &*v {
-            Val::Clos(cenv, cbody) => eval(
-                arg,
-                env,
-                Cont::EvalClos(Rc::clone(cbody), Rc::clone(cenv), cont),
-            ),
+            Val::Clos(cenv, cbody) => {
+                eval(arg, env, Cont::EvalClos(cbody.clone(), cenv.clone(), cont))
+            }
             _ => val::error(),
         },
         Cont::EvalClos(cbody, cenv, cont) => eval(cbody, env::cons(v, cenv), *cont),
@@ -32,14 +30,12 @@ pub fn eval(ast: Rc<Ast>, env: Rc<Env<Val>>, cont: Cont) -> Rc<Val> {
         Ast::Var(idx) => env::lookup(env, *idx)
             .map(|v| apply_cont(cont, v))
             .unwrap_or(Rc::new(Val::Error)),
-        Ast::Lam(body) => apply_cont(cont, Rc::new(Val::Clos(Rc::clone(&env), Rc::clone(body)))),
-        Ast::App(func, arg) => {
-            eval(
-                Rc::clone(&func),
-                env.clone(),
-                Cont::EvalArg(Rc::clone(arg), env, Box::new(cont)),
-            )
-       }
+        Ast::Lam(body) => apply_cont(cont, Rc::new(Val::Clos(env.clone(), body.clone()))),
+        Ast::App(func, arg) => eval(
+            func.clone(),
+            env.clone(),
+            Cont::EvalArg(arg.clone(), env, Box::new(cont)),
+        ),
     }
 }
 

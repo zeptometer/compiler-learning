@@ -1,32 +1,34 @@
-use crate::stlc::ast::*;
-use crate::stlc::env::*;
-use crate::stlc::val::*;
+use crate::stlc::ast::Ast;
+use crate::stlc::env;
+use crate::stlc::env::Env;
+use crate::stlc::val;
+use crate::stlc::val::Val;
 use std::rc::Rc;
 
 pub fn eval(ast: Rc<Ast>, env: Rc<Env<Val>>, cont: Box<dyn FnOnce(Rc<Val>) -> Rc<Val>>) -> Rc<Val> {
     match &*ast {
         Ast::Int(i) => cont(Rc::new(Val::Int(*i))),
-        Ast::Var(idx) => lookup(env, *idx)
+        Ast::Var(idx) => env::lookup(env, *idx)
             .map(|v| cont(v))
             .unwrap_or(Rc::new(Val::Error)),
-        Ast::Lam(body) => cont(Rc::new(Val::Clos(Rc::clone(&env), Rc::clone(body)))),
+        Ast::Lam(body) => cont(Rc::new(Val::Clos(env.clone(), body.clone()))),
         Ast::App(func, arg) => {
-            let env2 = Rc::clone(&env);
-            let arg2 = Rc::clone(&arg);
+            let env2 = env.clone();
+            let arg2 = arg.clone();
             eval(
-                Rc::clone(&func),
+                func.clone(),
                 env,
                 Box::new(|funcv| match &*funcv {
                     Val::Clos(cenv, body) => {
-                        let body2 = Rc::clone(body);
-                        let cenv2 = Rc::clone(cenv);
+                        let body2 = body.clone();
+                        let cenv2 = cenv.clone();
                         eval(
                             arg2,
                             env2,
-                            Box::new(|argval| eval(body2, cons(argval, cenv2), cont)),
+                            Box::new(|argval| eval(body2, env::cons(argval, cenv2), cont)),
                         )
                     }
-                    _ => Rc::new(Val::Error),
+                    _ => val::error(),
                 }),
             )
         }
