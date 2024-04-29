@@ -1,9 +1,4 @@
-use crate::lamcirc::eval_cps::data::ast;
-use crate::lamcirc::eval_cps::data::env;
-use crate::lamcirc::eval_cps::data::val;
-use crate::lamcirc::eval_cps::data::Ast;
-use crate::lamcirc::eval_cps::data::Env;
-use crate::lamcirc::eval_cps::data::Val;
+use crate::lamcirc::eval_cps::data::*;
 use std::rc::Rc;
 
 pub fn eval(
@@ -66,7 +61,7 @@ pub fn eval(
         (Ast::Lam(body), _) => cont(val::fut(ast::lam(body.clone()))),
         (Ast::App(func, arg), _) => cont(val::fut(ast::app(func.clone(), arg.clone()))),
         (Ast::Quo(code), _) => cont(val::fut(ast::quo(code.clone()))),
-        (Ast::Unq(code), _) => cont(val::fut(ast::unq(code.clone())))
+        (Ast::Unq(code), _) => cont(val::fut(ast::unq(code.clone()))),
     }
 }
 
@@ -78,19 +73,20 @@ mod tests {
     use crate::lamcirc::eval_cps::data::val;
 
     #[test]
-    fn eval_literal() {
+    fn eval_misc() {
         fn env1() -> Rc<Env> {
             env::cons(val::int(10), env::cons(val::int(20), env::empty()))
         }
-        assert_eq!(eval(ast::int(1), env1(), Box::new(|v| v)), val::int(1));
-        assert_eq!(eval(ast::var(0), env1(), Box::new(|v| v)), val::int(10));
-        assert_eq!(eval(ast::var(1), env1(), Box::new(|v| v)), val::int(20));
+        assert_eq!(eval(ast::int(1), 0, env1(), Box::new(|v| v)), val::int(1));
+        assert_eq!(eval(ast::var(0), 0, env1(), Box::new(|v| v)), val::int(10));
+        assert_eq!(eval(ast::var(1), 0, env1(), Box::new(|v| v)), val::int(20));
         assert_eq!(
             eval(
                 ast::app(
                     ast::app(ast::lam(ast::lam(ast::var(1))), ast::int(33)),
                     ast::int(44)
                 ),
+                0,
                 env1(),
                 Box::new(|v| v)
             ),
