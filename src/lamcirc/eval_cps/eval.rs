@@ -1,22 +1,30 @@
-use crate::lamcirc::eval_cps::data::Ast;
+use crate::lamcirc::eval_cps::data::ast;
 use crate::lamcirc::eval_cps::data::env;
-use crate::lamcirc::eval_cps::data::Env;
 use crate::lamcirc::eval_cps::data::val;
+use crate::lamcirc::eval_cps::data::Ast;
+use crate::lamcirc::eval_cps::data::Env;
 use crate::lamcirc::eval_cps::data::Val;
 use std::rc::Rc;
 
-pub fn eval(ast: Rc<Ast>, env: Rc<Env>, cont: Box<dyn FnOnce(Rc<Val>) -> Rc<Val>>) -> Rc<Val> {
-    match &*ast {
-        Ast::Int(i) => cont(Rc::new(Val::Int(*i))),
-        Ast::Var(idx) => env::lookup(env, *idx)
+pub fn eval(
+    ast: Rc<Ast>,
+    lev: i32,
+    env: Rc<Env>,
+    cont: Box<dyn FnOnce(Rc<Val>) -> Rc<Val>>,
+) -> Rc<Val> {
+    match (&*ast, lev) {
+        // Top-level evaluation
+        (Ast::Int(i), 0) => cont(val::int(*i)),
+        (Ast::Var(idx), 0) => env::lookup(env, *idx)
             .map(|v| cont(v))
             .unwrap_or(val::error()),
-        Ast::Lam(body) => cont(Rc::new(Val::Clos(env.clone(), body.clone()))),
-        Ast::App(func, arg) => {
+        (Ast::Lam(body), 0) => cont(Rc::new(Val::Clos(env.clone(), body.clone()))),
+        (Ast::App(func, arg), 0) => {
             let env2 = env.clone();
             let arg2 = arg.clone();
             eval(
                 func.clone(),
+                0,
                 env,
                 Box::new(|funcv| match &*funcv {
                     Val::Clos(cenv, body) => {
@@ -24,16 +32,41 @@ pub fn eval(ast: Rc<Ast>, env: Rc<Env>, cont: Box<dyn FnOnce(Rc<Val>) -> Rc<Val>
                         let cenv2 = cenv.clone();
                         eval(
                             arg2,
+                            0,
                             env2,
-                            Box::new(|argval| eval(body2, env::cons(argval, cenv2), cont)),
+                            Box::new(|argval| eval(body2, 0, env::cons(argval, cenv2), cont)),
                         )
                     }
                     _ => val::error(),
                 }),
             )
         }
-        Ast::Quo(_) => todo!(),
-        Ast::Unq(_) => todo!(),
+        (Ast::Quo(code), 0) => eval(
+            code.clone(),
+            1,
+            env,
+            Box::new(|codev| match &*codev {
+                Val::Fut(normcode) => cont(val::quo(normcode.clone())),
+                _ => val::error(),
+            }),
+        ),
+        (Ast::Unq(_), 0) => val::error(), // Top-level unquote is NOT allowed
+        (Ast::Unq(code), 1) => eval(
+            code.clone(),
+            0,
+            env,
+            Box::new(|codev| match &*codev {
+                Val::Quo(normcode) => cont(val::fut(normcode.clone())),
+                _ => val::error(),
+            }),
+        ),
+        // Future-level evaluation
+        (Ast::Int(i), _) => cont(val::fut(ast::int(*i))),
+        (Ast::Var(idx), _) => cont(val::fut(ast::var(*idx))),
+        (Ast::Lam(body), _) => cont(val::fut(ast::lam(body.clone()))),
+        (Ast::App(func, arg), _) => cont(val::fut(ast::app(func.clone(), arg.clone()))),
+        (Ast::Quo(code), _) => cont(val::fut(ast::quo(code.clone()))),
+        (Ast::Unq(code), _) => cont(val::fut(ast::unq(code.clone())))
     }
 }
 

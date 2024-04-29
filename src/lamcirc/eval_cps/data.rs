@@ -15,7 +15,8 @@ pub enum Val {
     Error,
     Int(i32),
     Clos(Rc<Env>, Rc<Ast>),
-    Quo(Rc<Ast>),
+    Quo(Rc<Ast>), // value for quoted code
+    Fut(Rc<Ast>)  // frozen term of future stages
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -68,6 +69,10 @@ pub mod val {
     }
 
     pub fn quo(ast: Rc<Ast>) -> Rc<Val> {
+        return Rc::new(Val::Quo(ast));
+    }
+
+    pub fn fut(ast: Rc<Ast>) -> Rc<Val> {
         return Rc::new(Val::Quo(ast));
     }
 }
