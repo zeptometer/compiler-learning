@@ -13,7 +13,30 @@ pub enum Ast {
 pub enum Val {
     Error,
     Int(i32),
-    Clos(Rc<Env>, Rc<Ast>),
+    Clos(Rc<Env>, Compt),
+}
+
+pub struct Compt(pub Rc<dyn Fn(Rc<Env>, Cont) -> Rc<Val>>);
+
+impl std::fmt::Debug for Compt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("{# some computation #}")
+    }
+}
+
+impl PartialEq for Compt {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for Compt {
+}
+
+impl Clone for Compt {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -24,8 +47,8 @@ pub enum Env {
 
 pub enum Cont {
     Cont0,
-    EvalArg(Rc<Ast>, Rc<Env>, Box<Cont>),
-    EvalClos(Rc<Ast>, Rc<Env>, Box<Cont>),
+    EvalArg(Compt, Rc<Env>, Box<Cont>),
+    EvalClos(Compt, Rc<Env>, Box<Cont>),
 }
 
 pub mod ast {
@@ -59,7 +82,7 @@ pub mod val {
         return Rc::new(Val::Int(i));
     }
 
-    pub fn clos(env: Rc<Env>, body: Rc<Ast>) -> Rc<Val> {
+    pub fn clos(env: Rc<Env>, body: Compt) -> Rc<Val> {
         return Rc::new(Val::Clos(env, body));
     }
 }

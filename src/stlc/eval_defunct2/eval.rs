@@ -6,35 +6,44 @@ fn apply_cont(cont: Cont, v: Rc<Val>) -> Rc<Val> {
         Cont::Cont0 => v,
         Cont::EvalArg(arg, env, cont) => match &*v {
             Val::Clos(cenv, cbody) => {
-                eval(arg, env, Cont::EvalClos(cbody.clone(), cenv.clone(), cont))
+                (&arg.0(env, Cont::EvalClos(cbody.clone(), cenv.clone(), cont))).clone()
             }
             _ => val::error(),
         },
-        Cont::EvalClos(cbody, cenv, cont) => eval(cbody, env::cons(v, cenv), *cont),
+        Cont::EvalClos(cbody, cenv, cont) => cbody.0(env::cons(v, cenv), *cont),
     }
 }
 
-pub fn eval(ast: Rc<Ast>, env: Rc<Env>, cont: Cont) -> Rc<Val> {
+pub fn eval(ast: Rc<Ast>) -> Compt {
     match &*ast {
-        Ast::Int(i) => apply_cont(cont, Rc::new(Val::Int(*i))),
-        Ast::Var(idx) => env::lookup(env, *idx)
-            .map(|v| apply_cont(cont, v))
-            .unwrap_or(Rc::new(Val::Error)),
-        Ast::Lam(body) => apply_cont(cont, Rc::new(Val::Clos(env.clone(), body.clone()))),
-        Ast::App(func, arg) => eval(
-            func.clone(),
-            env.clone(),
-            Cont::EvalArg(arg.clone(), env, Box::new(cont)),
-        ),
+        Ast::Int(i) => Compt(Rc::new(|env, cont| apply_cont(cont, Rc::new(Val::Int(*i))))),
+        Ast::Var(idx) => Compt(Rc::new(|env, cont| {
+            env::lookup(env, *idx)
+                .map(|v| apply_cont(cont, v))
+                .unwrap_or(val::error())
+        })),
+        Ast::Lam(body) => {
+            let body_compt = eval(body.clone());
+            Compt(Rc::new(|env, cont| {
+                apply_cont(cont, Rc::new(Val::Clos(env.clone(), body_compt)))
+            }))
+        }
+        Ast::App(func, arg) => {
+            let func_compt = eval(func.clone());
+            let arg_compt = eval(arg.clone());
+            Compt(Rc::new(|env, cont| {
+                func_compt.0(env.clone(), Cont::EvalArg(arg_compt, env, Box::new(cont)))
+            }))
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stlc::eval_defunct2::data::Env;
     use crate::stlc::eval_defunct2::data::env::{cons, empty};
     use crate::stlc::eval_defunct2::data::val;
+    use crate::stlc::eval_defunct2::data::Env;
 
     #[test]
     fn eval_literal() {
