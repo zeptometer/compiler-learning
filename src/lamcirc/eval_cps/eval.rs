@@ -93,8 +93,24 @@ pub fn eval(
                 }),
             )
         }
-        (_, Ast::Quo(code)) => cont(val::fut(ast::quo(code.clone()))),
-        (_, Ast::Unq(code)) => cont(val::fut(ast::unq(code.clone()))),
+        (lev, Ast::Quo(code)) => eval(
+            lev + 1,
+            code.clone(),
+            env,
+            Box::new(|v| match &*v {
+                Val::Fut(codev) => cont(val::fut(ast::quo(codev.clone()))),
+                _ => val::error("Expected future code fragment"),
+            }),
+        ),
+        (_, Ast::Unq(code)) => eval(
+            lev - 1,
+            code.clone(),
+            env,
+            Box::new(|v| match &*v {
+                Val::Fut(codev) => cont(val::fut(ast::unq(codev.clone()))),
+                _ => val::error("Expected future code fragment"),
+            }),
+        ),
     }
 }
 
@@ -161,6 +177,18 @@ mod tests {
                 Box::new(|v| v)
             ),
             val::quo(app(var(0), int(1)))
+        );
+    }
+
+    #[test]
+    fn eval_nested_quotes() {
+        assert_eq!(
+            eval(0, quo(quo(unq(var(0)))), env1(), Box::new(|v| v)),
+            val::quo(quo(unq(var(0))))
+        );
+        assert_eq!(
+            eval(0, quo(quo(unq(unq(quo(var(1)))))), env1(), Box::new(|v| v)),
+            val::quo(quo(unq(var(1))))
         );
     }
 }
