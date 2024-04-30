@@ -12,7 +12,7 @@ pub enum Ast {
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum Val {
-    Error,
+    Error(String),
     Int(i32),
     Clos(Rc<Env>, Rc<Ast>),
     Quo(Rc<Ast>), // value for quoted code
@@ -36,28 +36,28 @@ pub mod ast {
         Rc::new(Ast::Var(i))
     }
 
-    pub fn lam(a: Rc<Ast>) -> Rc<Ast> {
-        Rc::new(Ast::Lam(Rc::clone(&a)))
+    pub fn lam(ast: Rc<Ast>) -> Rc<Ast> {
+        Rc::new(Ast::Lam(ast))
     }
 
-    pub fn app(a1: Rc<Ast>, a2: Rc<Ast>) -> Rc<Ast> {
-        Rc::new(Ast::App(Rc::clone(&a1), Rc::clone(&a2)))
+    pub fn app(ast1: Rc<Ast>, ast2: Rc<Ast>) -> Rc<Ast> {
+        Rc::new(Ast::App(ast1, ast2))
     }
 
-    pub fn quo(a: Rc<Ast>) -> Rc<Ast> {
-        Rc::new(Ast::Quo(Rc::clone(&a)))
+    pub fn quo(ast: Rc<Ast>) -> Rc<Ast> {
+        Rc::new(Ast::Quo(ast))
     }
 
-    pub fn unq(a: Rc<Ast>) -> Rc<Ast> {
-        Rc::new(Ast::Unq(Rc::clone(&a)))
+    pub fn unq(ast: Rc<Ast>) -> Rc<Ast> {
+        Rc::new(Ast::Unq(ast))
     }
 }
 
 pub mod val {
     use super::*;
 
-    pub fn error() -> Rc<Val> {
-        return Rc::new(Val::Error);
+    pub fn error(msg: &str) -> Rc<Val> {
+        return Rc::new(Val::Error(String::from(msg)));
     }
 
     pub fn int(i: i32) -> Rc<Val> {
@@ -73,7 +73,7 @@ pub mod val {
     }
 
     pub fn fut(ast: Rc<Ast>) -> Rc<Val> {
-        return Rc::new(Val::Quo(ast));
+        return Rc::new(Val::Fut(ast));
     }
 }
 
