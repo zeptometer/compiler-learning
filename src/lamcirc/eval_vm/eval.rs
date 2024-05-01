@@ -48,23 +48,23 @@ fn apply_cont(cont: Cont, v: Rc<Val>) -> Rc<Val> {
     }
 }
 
-pub fn run(compt: Rc<Compt>, lev: i32, env: Rc<Env>, cont: Box<Cont>) -> Rc<Val> {
-    match &*compt {
-        Compt::Lit(i) => match lev {
+pub fn run(instrs: Rc<InstrSeq>, lev: i32, env: Rc<Env>, cont: Box<Cont>) -> Rc<Val> {
+    match &*instrs {
+        InstrSeq::Seq(Instr::Lit(i), _) => match lev {
             0 => apply_cont(*cont, val::int(*i)),
             _ => apply_cont(*cont, val::fut(ast::int(*i))),
         },
-        Compt::Var(idx) => match lev {
+        InstrSeq::Seq(Instr::Var(idx), _) => match lev {
             0 => env::lookup(env, *idx)
                 .map(|v| apply_cont(*cont, v))
                 .unwrap_or(val::error("Undefined variable")),
             _ => apply_cont(*cont, val::fut(ast::var(*idx))),
         },
-        Compt::Clos(body) => match lev {
+        InstrSeq::Seq(Instr::Clos(body), _) => match lev {
             0 => apply_cont(*cont, val::clos(env.clone(), body.clone())),
             lev => run(body.clone(), lev, env, Box::new(Cont::FutLam(cont))),
         },
-        Compt::Push(func, arg) => match lev {
+        InstrSeq::Seq(Instr::Push(func), arg) => match lev {
             0 => run(
                 func.clone(),
                 0,
@@ -78,28 +78,29 @@ pub fn run(compt: Rc<Compt>, lev: i32, env: Rc<Env>, cont: Box<Cont>) -> Rc<Val>
                 Box::new(Cont::FutAppArg(lev, arg.clone(), env, cont)),
             ),
         },
-        Compt::Quo(code) => match lev {
+        InstrSeq::Seq(Instr::Ent, code) => match lev {
             0 => run(code.clone(), 1, env, Box::new(Cont::ToQuo(cont))),
             lev => run(code.clone(), lev + 1, env, Box::new(Cont::FutQuo(cont))),
         },
-        Compt::Unq(code) => match lev {
+        InstrSeq::Seq(Instr::Leave, code) => match lev {
             0 => val::error("Top-level unquote is NOT allowed"),
             1 => run(code.clone(), 0, env, Box::new(Cont::RedQuo(cont))),
             lev => run(code.clone(), lev - 1, env, Box::new(Cont::FutUnq(cont))),
         },
+        InstrSeq::End => val::error("Reached end of instruction sequence, unexpectedly"),
     }
 }
 
-pub fn compile(ast: Rc<Ast>) -> Rc<Compt> {
-    //    println!("evaluating {:?} at level {}", &ast, lev);
+pub fn compile(ast: Rc<Ast>) -> Rc<InstrSeq> {
     match &*ast {
-        // Top-level evaluation
-        Ast::Int(i) => Rc::new(Compt::Lit(*i)),
-        Ast::Var(idx) => Rc::new(Compt::Var(*idx)),
-        Ast::Lam(body) => Rc::new(Compt::Clos(compile(body.clone()))),
-        Ast::App(func, arg) => Rc::new(Compt::Push(compile(func.clone()), compile(arg.clone()))),
-        Ast::Quo(code) => Rc::new(Compt::Quo(compile(code.clone()))),
-        Ast::Unq(code) => Rc::new(Compt::Unq(compile(code.clone()))),
+        Ast::Int(i) => instrseq::singleton(instr::lit(*i)),
+        Ast::Var(idx) => instrseq::singleton(instr::var(*idx)),
+        Ast::Lam(body) => instrseq::singleton(instr::clos(compile(body.clone()))),
+        Ast::App(func, arg) => {
+            instrseq::seq(instr::push(compile(func.clone())), compile(arg.clone()))
+        }
+        Ast::Quo(code) => instrseq::seq(instr::ent(), compile(code.clone())),
+        Ast::Unq(code) => instrseq::seq(instr::leave(), compile(code.clone())),
     }
 }
 

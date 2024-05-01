@@ -14,7 +14,7 @@ pub enum Ast {
 pub enum Val {
     Error(String),
     Int(i32),
-    Clos(Rc<Env>, Rc<Compt>),
+    Clos(Rc<Env>, Rc<InstrSeq>),
     Quo(Rc<Ast>), // value for quoted code
     Fut(Rc<Ast>), // frozen term of future stages
 }
@@ -26,23 +26,29 @@ pub enum Env {
 }
 
 #[derive(Eq, PartialEq, Debug)]
-pub enum Compt {
+pub enum InstrSeq {
+    End,
+    Seq(Instr, Rc<InstrSeq>),
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub enum Instr {
     Lit(i32),
     Var(usize),
-    Clos(Rc<Compt>),
-    Push(Rc<Compt>, Rc<Compt>),
-    Quo(Rc<Compt>),
-    Unq(Rc<Compt>),
+    Clos(Rc<InstrSeq>),
+    Push(Rc<InstrSeq>),
+    Ent,
+    Leave,
 }
 
 pub enum Cont {
     End,
-    EvalArg(Rc<Compt>, Rc<Env>, Box<Cont>),
-    ReduceFunc(Rc<Compt>, Rc<Env>, Box<Cont>),
+    EvalArg(Rc<InstrSeq>, Rc<Env>, Box<Cont>),
+    ReduceFunc(Rc<InstrSeq>, Rc<Env>, Box<Cont>),
     ToQuo(Box<Cont>),
     RedQuo(Box<Cont>),
     FutLam(Box<Cont>),
-    FutAppArg(i32, Rc<Compt>, Rc<Env>, Box<Cont>),
+    FutAppArg(i32, Rc<InstrSeq>, Rc<Env>, Box<Cont>),
     FutApp(Rc<Ast>, Box<Cont>),
     FutQuo(Box<Cont>),
     FutUnq(Box<Cont>),
@@ -87,7 +93,7 @@ pub mod val {
         return Rc::new(Val::Int(i));
     }
 
-    pub fn clos(env: Rc<Env>, body: Rc<Compt>) -> Rc<Val> {
+    pub fn clos(env: Rc<Env>, body: Rc<InstrSeq>) -> Rc<Val> {
         return Rc::new(Val::Clos(env, body));
     }
 
@@ -122,5 +128,49 @@ pub mod env {
                 }
             }
         }
+    }
+}
+
+pub mod instrseq {
+    use super::*;
+
+    pub fn end() -> Rc<InstrSeq> {
+        Rc::new(InstrSeq::End)
+    }
+
+    pub fn seq(instr: Instr, rest: Rc<InstrSeq>) -> Rc<InstrSeq> {
+        Rc::new(InstrSeq::Seq(instr, rest))
+    }
+
+    pub fn singleton(instr: Instr) -> Rc<InstrSeq> {
+        seq(instr, end())
+    }
+}
+
+pub mod instr {
+    use super::*;
+
+    pub fn lit(i: i32) -> Instr {
+        Instr::Lit(i)
+    }
+
+    pub fn var(idx: usize) -> Instr {
+        Instr::Var(idx)
+    }
+
+    pub fn clos(body: Rc<InstrSeq>) -> Instr {
+        Instr::Clos(body)
+    }
+
+    pub fn push(func: Rc<InstrSeq>) -> Instr {
+        Instr::Push(func)
+    }
+
+    pub fn ent() -> Instr {
+        Instr::Ent
+    }
+
+    pub fn leave() -> Instr {
+        Instr::Leave
     }
 }
