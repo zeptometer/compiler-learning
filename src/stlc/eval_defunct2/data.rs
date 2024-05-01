@@ -16,35 +16,12 @@ pub enum Val {
     Clos(Rc<Env>, Rc<Compt>),
 }
 
-pub struct ComptOld(pub Rc<dyn Fn(Rc<Env>, Cont) -> Rc<Val>>);
-
-impl std::fmt::Debug for ComptOld {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("{# some computation #}")
-    }
-}
-
-impl PartialEq for ComptOld {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.0, &other.0)
-    }
-}
-
-impl Eq for ComptOld {
-}
-
-impl Clone for ComptOld {
-    fn clone(&self) -> Self {
-        Self(self.0.clone())
-    }
-}
-
 #[derive(Eq, PartialEq, Debug)]
 pub enum Compt {
-    Lit(i32), // literal
-    Access(usize), // var
-    Close(Rc<Compt>), // lam
-    Push(Rc<Compt>, Rc<Compt>) // app
+    Lit(i32),                   // literal
+    Access(usize),              // var
+    Close(Rc<Compt>),           // lam
+    Push(Rc<Compt>, Rc<Compt>), // app
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -125,8 +102,8 @@ mod tests {
     use super::*;
 
     mod ast_tests {
-        use super::*;
         use super::ast::*;
+        use super::*;
 
         #[test]
         fn make_literal() {
@@ -150,8 +127,8 @@ mod tests {
     }
 
     mod env_tests {
-        use super::*;
         use super::env::*;
+        use super::*;
 
         #[test]
         fn make_nil() {
