@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{fmt::Debug, rc::Rc};
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum Ast {
@@ -14,7 +14,7 @@ pub enum Ast {
 pub enum Val {
     Error(String),
     Int(i32),
-    Clos(Rc<Env>, Rc<Ast>),
+    Clos(Rc<Env>, Compt),
     Quo(Rc<Ast>), // value for quoted code
     Fut(Rc<Ast>), // frozen term of future stages
 }
@@ -25,14 +25,30 @@ pub enum Env {
     Cons(Rc<Val>, Rc<Env>),
 }
 
+pub struct Compt(pub Box<dyn FnOnce(i32, Rc<Env>, Box<Cont>) -> Rc<Val>>);
+
+impl Debug for Compt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl PartialEq for Compt {
+    fn eq(&self, other: &Self) -> bool {
+        todo!()
+    }
+}
+
+impl Eq for Compt {}
+
 pub enum Cont {
     End,
-    EvalArg(Rc<Ast>, Rc<Env>, Box<Cont>),
-    ReduceFunc(Rc<Ast>, Rc<Env>, Box<Cont>),
+    EvalArg(Compt, Rc<Env>, Box<Cont>),
+    ReduceFunc(Compt, Rc<Env>, Box<Cont>),
     ToQuo(Box<Cont>),
     RedQuo(Box<Cont>),
     FutLam(Box<Cont>),
-    FutAppArg(i32, Rc<Ast>, Rc<Env>, Box<Cont>),
+    FutAppArg(i32, Compt, Rc<Env>, Box<Cont>),
     FutApp(Rc<Ast>, Box<Cont>),
     FutQuo(Box<Cont>),
     FutUnq(Box<Cont>),
@@ -77,7 +93,7 @@ pub mod val {
         return Rc::new(Val::Int(i));
     }
 
-    pub fn clos(env: Rc<Env>, body: Rc<Ast>) -> Rc<Val> {
+    pub fn clos(env: Rc<Env>, body: Compt) -> Rc<Val> {
         return Rc::new(Val::Clos(env, body));
     }
 
